@@ -8,6 +8,8 @@
 
 class SocketAddress {
 public:
+	SocketAddress() { }
+
 	SocketAddress(std::string inAddress, uint16_t inPort) {
 		GetAsSockAddrIn()->sin_family = AF_INET;
 		inet_pton(AF_INET, inAddress.c_str(), &(GetAsSockAddrIn()->sin_addr.S_un.S_addr));

@@ -1,5 +1,5 @@
-#ifndef __BIT_STREAM__
-#define __BIT_STREAM__
+#ifndef __BIT_STREAM_H__
+#define __BIT_STREAM_H__
 
 #include <cstdint>
 #include <cstdlib>
@@ -59,10 +59,10 @@ class OutputBitStream {
 public:
 	OutputBitStream() :
 		mBitHead(0),
-		mBuffer(nullptr) { 
+		mBuffer(nullptr) {
 		ReallocBuffer(256);
 	}
-	~OutputBitStream() { 
+	~OutputBitStream() {
 		if (mBuffer != nullptr) {
 			std::free(mBuffer);
 		}

@@ -18,6 +18,26 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="BitStream.cpp" />
+    <ClCompile Include="IOCP.cpp" />
+    <ClCompile Include="Logger.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="NetworkManager.cpp" />
+    <ClCompile Include="Server.cpp" />
+    <ClCompile Include="SocketUtil.cpp" />
+    <ClCompile Include="TCPSocket.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="BitStream.h" />
+    <ClInclude Include="IOCP.h" />
+    <ClInclude Include="Logger.h" />
+    <ClInclude Include="NetworkManager.h" />
+    <ClInclude Include="Server.h" />
+    <ClInclude Include="SocketAddress.h" />
+    <ClInclude Include="SocketUtil.h" />
+    <ClInclude Include="TCPSocket.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -139,18 +159,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="BitStream.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="SocketUtil.cpp" />
-    <ClCompile Include="TCPSocket.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="BitStream.h" />
-    <ClInclude Include="SocketAddress.h" />
-    <ClInclude Include="SocketUtil.h" />
-    <ClInclude Include="TCPSocket.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

@@ -33,7 +33,7 @@ void InputBitStream::ReadBits(void* outData, size_t inBitCount) {
 }
 
 /**
- * OutputBitStream 
+ * OutputBitStream
  */
 void OutputBitStream::WriteBits(uint8_t inData, size_t inBitCount) {
 	uint32_t nextBitHead = mBitHead + static_cast<uint32_t>(inBitCount);

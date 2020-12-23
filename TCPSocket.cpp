@@ -25,14 +25,14 @@ int TCPSocket::Listen(int inBackLog) {
 	return 0;
 }
 
-TCPSocketPtr TCPSocket::Accept(SocketAddress& inFromAddress) {
+std::shared_ptr<TCPSocket> TCPSocket::Accept(SocketAddress& inFromAddress) {
 	socklen_t length = inFromAddress.GetSize();
 	SOCKET sock = accept(mSocket, &inFromAddress.mSockAddr, &length);
 	if (sock == INVALID_SOCKET) {
 		SocketUtil::ReportError("TCPSocket::Accept");
 		return nullptr;
 	}
-	return TCPSocketPtr(new TCPSocket(sock));
+	return std::shared_ptr<TCPSocket>(new TCPSocket(sock));
 }
 
 int TCPSocket::Send(const void* inData, int inLen) {
@@ -40,5 +40,11 @@ int TCPSocket::Send(const void* inData, int inLen) {
 }
 
 int TCPSocket::Receive(void* inBuffer, int inLen) {
-	return 0;
+	//DWORD recvBytes, flags = 0;
+	//int err = WSARecv(mSocket, &(ioData->wsaBuf), 1, &recvBytes, &flags, &(ioData->overlapped), NULL);
+	//if (err == 0) {
+	//	SocketUtil::ReportError("TCPSocket::Receive");
+	//	return -SocketUtil::GetLastError();
+	//}
+	//return recvBytes;
 }

@@ -4,6 +4,8 @@
 #include <WinSock2.h>
 #include "TCPSocket.h"
 
+class IOCP;
+
 class SocketUtil {
 public:
 	static bool Init();
@@ -12,7 +14,8 @@ public:
 	static void ReportError(const char* inOperationDesc);
 	static int GetLastError();
 
-	static TCPSocketPtr CreateTCPSocket();
+	static std::shared_ptr<TCPSocket> CreateTCPSocket();
+	static std::shared_ptr<IOCP> CreateIOCP();
 
 private:
 };

@@ -1,10 +1,11 @@
 #include "SocketUtil.h"
+#include "IOCP.h"
 
 bool SocketUtil::Init() {
 	WSADATA wsaData;
 	int err = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (err != NO_ERROR) {
-		// TODO: 俊矾 贸府
+		// TODO: 俊矾 贸府 内靛
 	}
 	return true;
 }
@@ -27,18 +28,34 @@ void SocketUtil::ReportError(const char* inOperationDesc) {
 		0,
 		NULL
 	);
-	// TODO: 俊矾 贸府
+	// TODO: 俊矾 贸府 内靛
 }
 
 int SocketUtil::GetLastError() {
 	return WSAGetLastError();
 }
 
-TCPSocketPtr SocketUtil::CreateTCPSocket() {
+std::shared_ptr<TCPSocket> SocketUtil::CreateTCPSocket() {
 	SOCKET sock = WSASocket(PF_INET, SOCK_STREAM, IPPROTO_TCP, 0, NULL, WSA_FLAG_OVERLAPPED);
+
+	// TIME-WAIT disable debugging option
+	int option = TRUE;
+	socklen_t optlen = sizeof(option);
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (char*)&option, optlen);
+	// .............
+
 	if (sock == INVALID_SOCKET) {
 		SocketUtil::ReportError("SocketUtil::CreateTCPSocket");
 		return nullptr;
 	}
-	return TCPSocketPtr(new TCPSocket(sock));
+	return std::shared_ptr<TCPSocket>(new TCPSocket(sock));
+}
+
+std::shared_ptr<IOCP> SocketUtil::CreateIOCP() {
+	HANDLE comPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	if (comPort == NULL) {
+		SocketUtil::ReportError("SocketUtil::CreateIOCP");
+		return nullptr;
+	}
+	return std::shared_ptr<IOCP>(new IOCP(comPort));
 }

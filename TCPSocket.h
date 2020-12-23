@@ -6,7 +6,7 @@
 
 class TCPSocket {
 public:
-	//~TCPSocket();
+	~TCPSocket() { closesocket(mSocket); }
 	int Connect(const SocketAddress& inAddress);
 	int Bind(const SocketAddress& inToAddress);
 	int Listen(int inBackLog);
@@ -14,12 +14,12 @@ public:
 	int Send(const void* inData, int inLen);
 	int Receive(void* inBuffer, int inLen);
 
+	SOCKET GetSocket() { return mSocket; }
+
 private:
 	friend class SocketUtil;
 	TCPSocket(SOCKET inSocket) : mSocket(inSocket) {}
 	SOCKET mSocket;
 };
-
-typedef std::shared_ptr<TCPSocket> TCPSocketPtr;
 
 #endif
