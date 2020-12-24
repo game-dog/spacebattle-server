@@ -8,10 +8,15 @@
 
 class SocketUtil;
 
+typedef struct {
+	std::shared_ptr<TCPSocket> pClntSock;
+	SocketAddress clntAddr;
+} IOCP_KEY_DATA, * LPIOCP_KEY_DATA;
+
 class IOCP {
 public:
 	void ConnectSockToIOCP(std::shared_ptr<TCPSocket> clntSock, LPIOCP_KEY_DATA pKeyData);
-
+	void GetCompletion(LPIOCP_KEY_DATA& pKeyData, LPIO_DATA& pIOData);
 
 	HANDLE GetIOCP() { return mComPort; }
 

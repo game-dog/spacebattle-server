@@ -4,6 +4,8 @@
 #include <WinSock2.h>
 #include "TCPSocket.h"
 
+//#pragma comment(lib, "ws2_32.lib")
+
 class IOCP;
 
 class SocketUtil {

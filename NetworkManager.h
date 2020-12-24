@@ -26,16 +26,4 @@ private:
 	static void ProcessLoginPacket(std::shared_ptr<IOCP> pIOCP);
 };
 
-typedef struct {
-	std::shared_ptr<TCPSocket> pClntSock;
-	SocketAddress clntAddr;
-} IOCP_KEY_DATA, * LPIOCP_KEY_DATA;
-
-typedef struct {
-	OVERLAPPED overlapped;
-	WSABUF wsaBuf;
-	char buffer[1024];
-	int rwMode;
-} IO_DATA, * LPIO_DATA;
-
 #endif

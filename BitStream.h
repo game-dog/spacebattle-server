@@ -20,15 +20,15 @@ public:
 		mBitHead(0) {}
 	~InputBitStream() {
 		if (mBuffer != nullptr) {
-			std::free(mBuffer);
+			// std::free(mBuffer);
 		}
 	}
 
 	const uint8_t* GetBufferPtr() const { return mBuffer; }
 	uint32_t GetRemainingBitCount() { return mBitCapacity - mBitHead; }
 
-	void ReadBits(uint8_t& outData, uint32_t inBitCount);
-	void ReadBits(void* outData, uint32_t inBitCount);
+	void ReadBits(uint8_t& outData, size_t inBitCount);
+	void ReadBits(void* outData, size_t inBitCount);
 	void ReadBytes(void* outData, uint32_t inByteCount) {
 		ReadBits(outData, inByteCount << 3);
 	}

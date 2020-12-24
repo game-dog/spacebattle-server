@@ -9,7 +9,7 @@ void NetworkManager::OpenSockets() {
 	std::shared_ptr<IOCP> pIOCP = SocketUtil::CreateIOCP();
 
 	std::vector<std::thread> compRoutine;
-	for (int i = 0; i < mSysInfo.dwNumberOfProcessors; ++i) {
+	for (int i = 0; i < (int)mSysInfo.dwNumberOfProcessors; ++i) {
 		compRoutine.push_back(std::thread(ProcessLoginPacket, pIOCP));
 	}
 
@@ -21,7 +21,7 @@ void NetworkManager::OpenSockets() {
 
 	std::thread acceptThr(AcceptThread, pSock, pIOCP);
 
-	for (int i = 0; i < mSysInfo.dwNumberOfProcessors; ++i) {
+	for (int i = 0; i < (int)mSysInfo.dwNumberOfProcessors; ++i) {
 		compRoutine[i].join();
 	}
 	acceptThr.join();
@@ -40,34 +40,27 @@ void NetworkManager::AcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_
 		pKeyData->clntAddr = clntAddr;
 		pIOCP->ConnectSockToIOCP(pClntSock, pKeyData);
 
-		LPIO_DATA ioData = new IO_DATA;
-		memset(&(ioData->overlapped), 0, sizeof(OVERLAPPED));
-		ioData->wsaBuf.buf = ioData->buffer;
-		ioData->wsaBuf.len = 1024;
-		// ioData->rwMode = 1;
-
-		// TODO: TCPSocket 클래스 recv 함수 작성
-		// pClntSock->Receive();
+		pClntSock->Receive();
 	}
 }
 
 void NetworkManager::ProcessLoginPacket(std::shared_ptr<IOCP> pIOCP) {
-	DWORD bytesTrans;
-
 	LPIOCP_KEY_DATA pKeyData;
 	LPIO_DATA ioData;
 
 	while (1) {
-		GetQueuedCompletionStatus(pIOCP->GetIOCP(), &bytesTrans, (LPDWORD)&pKeyData, (LPOVERLAPPED*)&ioData, INFINITE);
+		pIOCP->GetCompletion(pKeyData, ioData);
+		if (ioData->rwMode == MODE_READ) {
+			InputBitStream ibs((uint8_t*)ioData->buffer, 8 * 40);
 
-		// TODO: 인증 후, client proxy 추가
+			char id[20], pw[20];
+			ibs.ReadBytes(id, 20);
+			ibs.ReadBytes(pw, 20);
 
-		//InputBitStream ibs((uint8_t*)ioData->buffer, 1024);
-		//char id[20], pw[20];
-		//ibs.ReadBytes(id, 20);
-		//ibs.ReadBytes(pw, 20);
+			LOG(id);
+			LOG(pw);
 
-		//LOG(id);
-		//LOG(pw);
+			// TODO: 인증 후, client proxy 추가 (db 연동)
+		}	
 	}
 }
