@@ -28,6 +28,7 @@
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="SocketUtil.cpp" />
     <ClCompile Include="TCPSocket.cpp" />
+    <ClCompile Include="Account.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BitStream.h" />
@@ -39,6 +40,7 @@
     <ClInclude Include="SocketAddress.h" />
     <ClInclude Include="SocketUtil.h" />
     <ClInclude Include="TCPSocket.h" />
+    <ClInclude Include="Account.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

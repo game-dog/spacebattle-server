@@ -3,12 +3,14 @@
 
 #include <WinSock2.h>
 #include <vector>
+#include <string>
 #include <thread>
 
 #include "TCPSocket.h"
 #include "SocketUtil.h"
 #include "SocketAddress.h"
 #include "BitStream.h"
+#include "Account.h"
 #include "Logger.h"
 
 class IOCP;

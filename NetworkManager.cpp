@@ -53,14 +53,20 @@ void NetworkManager::ProcessLoginPacket(std::shared_ptr<IOCP> pIOCP) {
 		if (ioData->rwMode == MODE_READ) {
 			InputBitStream ibs((uint8_t*)ioData->buffer, 8 * 40);
 
-			char id[20], pw[20];
-			ibs.ReadBytes(id, 20);
-			ibs.ReadBytes(pw, 20);
+			std::string inID(20, 0), inPW(20, 0);
+			ibs.ReadBytes(&inID[0], 20);
+			ibs.ReadBytes(&inPW[0], 20);
 
-			LOG(id);
-			LOG(pw);
+			LOG(inID.c_str());
+			LOG(inPW.c_str());
 
-			// TODO: 인증 후, client proxy 추가 (db 연동)
-		}	
+			std::string pwDigest = Account::GetPasswd(inID.c_str());
+			if (pwDigest == "") {
+				// TODO: 해당 계정에 대한 정보 없음
+			}
+			else {
+				// TODO: inPW를 MD5 암호화 후, pwDigest와 비교
+			}
+		}
 	}
 }
