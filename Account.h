@@ -6,11 +6,13 @@
 #include <unordered_map>
 
 #include "Database.h"
+#include "Crypto.h"
 
 class Account {
 public:
 	static void GetAccountData();
 	static std::string GetPasswd(const char* id) { return mIDtoPwDigest[id]; }
+	static bool VerifyAccount(const char* id, const char* pw);
 
 private:
 	static const char* selectQuery;

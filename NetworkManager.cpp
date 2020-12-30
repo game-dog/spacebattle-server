@@ -57,16 +57,18 @@ void NetworkManager::ProcessLoginPacket(std::shared_ptr<IOCP> pIOCP) {
 			ibs.ReadBytes(&inID[0], 20);
 			ibs.ReadBytes(&inPW[0], 20);
 
-			LOG(inID.c_str());
-			LOG(inPW.c_str());
+			//LOG(inID.c_str());
+			//LOG(inPW.c_str());
 
-			std::string pwDigest = Account::GetPasswd(inID.c_str());
-			if (pwDigest == "") {
-				// TODO: 해당 계정에 대한 정보 없음
+			bool result = Account::VerifyAccount(inID.c_str(), inPW.c_str());
+			if (result == TRUE) {
+				// TODO: 서버 접속 성공 패킷 전달
 			}
 			else {
-				// TODO: inPW를 MD5 암호화 후, pwDigest와 비교
+				// TODO: 서버 접속 실패 패킷 전달
 			}
+
+			// TODO: 소켓 연결 종료
 		}
 	}
 }
