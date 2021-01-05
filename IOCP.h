@@ -15,8 +15,8 @@ typedef struct {
 
 class IOCP {
 public:
-	void ConnectSockToIOCP(std::shared_ptr<TCPSocket> clntSock, LPIOCP_KEY_DATA pKeyData);
-	void GetCompletion(LPIOCP_KEY_DATA& pKeyData, LPIO_DATA& pIOData);
+	void ConnectSockToIOCP(std::shared_ptr<TCPSocket> clntSock, SocketAddress &sockAddr);
+	int32_t GetCompletion(LPIOCP_KEY_DATA& pKeyData, LPIO_DATA& pIOData);
 
 	HANDLE GetIOCP() { return mComPort; }
 

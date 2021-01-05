@@ -33,6 +33,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BitStream.h" />
+    <ClInclude Include="ClientProxy.h" />
     <ClInclude Include="Crypto.h" />
     <ClInclude Include="Database.h" />
     <ClInclude Include="IOCP.h" />

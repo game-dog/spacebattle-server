@@ -1,12 +1,13 @@
 #include "Account.h"
 
 const char* Account::selectQuery = "SELECT * FROM account";
-std::unordered_map<std::string, std::string> Account::mIDtoPwDigest = std::unordered_map<std::string, std::string>();
+std::unordered_map<std::string, std::shared_ptr<Account::UserData>> Account::mIDtoUserData = std::unordered_map<std::string, std::shared_ptr<Account::UserData>>();
 
 void Account::GetAccountData() {
 	std::vector<std::vector<std::string>> dat = Database::Query((const char*)selectQuery);
 	for (auto& entry : dat) {
-		mIDtoPwDigest[entry[1]] = entry[2];
+		mIDtoUserData[entry[1]] = std::make_shared<UserData>();
+		mIDtoUserData[entry[1]]->pwDigest = entry[2];
 	}
 }
 
