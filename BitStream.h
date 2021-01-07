@@ -76,7 +76,7 @@ public:
 	void WriteBits(const void* inData, size_t inBitCount);
 
 	void WriteBytes(const void* inData, size_t inByteCount) {
-		WriteBits(inData, inByteCount >> 3);
+		WriteBits(inData, inByteCount << 3);
 	}
 
 	template<typename T>
