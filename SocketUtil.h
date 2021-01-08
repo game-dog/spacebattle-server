@@ -2,7 +2,9 @@
 #define __SOCKET_UTIL_H__
 
 #include <WinSock2.h>
+
 #include "TCPSocket.h"
+#include "Logger.h"
 
 #pragma comment(lib, "ws2_32.lib")
 

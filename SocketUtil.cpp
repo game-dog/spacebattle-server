@@ -28,7 +28,7 @@ void SocketUtil::ReportError(const char* inOperationDesc) {
 		0,
 		NULL
 	);
-	// TODO: 에러 처리 코드
+	LOG("Error %s: %d- %s", inOperationDesc, errNum, lpMsgBuf);
 }
 
 int SocketUtil::GetLastError() {

@@ -11,6 +11,7 @@ class SocketUtil;
 typedef struct {
 	std::shared_ptr<TCPSocket> pClntSock;
 	SocketAddress clntAddr;
+	std::string id;
 } IOCP_KEY_DATA, * LPIOCP_KEY_DATA;
 
 class IOCP {

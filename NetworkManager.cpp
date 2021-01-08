@@ -48,42 +48,31 @@ void NetworkManager::ProcessLoginPacket(std::shared_ptr<IOCP> pIOCP, NetworkMana
 		// TODO: IOCP와 NetworkManager 클래스를 이어주도록? ReceivedPacket queue 사용?
 		int32_t byteTrans = pIOCP->GetCompletion(pKeyData, ioData);
 		if (ioData->rwMode == MODE_READ) {
-			if (byteTrans == 0) {
-				LOG("CLIENT DISCONNECTED");
-				free(pKeyData);
-				continue;
-			}
-			InputBitStream ibs((uint8_t*)ioData->buffer, 4 + 8 * 40);
-
-			uint8_t header;
+			uint8_t header = 0;
 			std::string inID(20, 0), inPW(20, 0);
-			ibs.ReadBits((void*)&header, 4);
-			ibs.ReadBytes(&inID[0], 20);
-			ibs.ReadBytes(&inPW[0], 20);
+			nm.RecvLoginInfo(ioData, &header, inID, inPW);
 
 			LOG(inID.c_str());
 			LOG(inPW.c_str());
 
-			bool result = Account::VerifyAccount(inID.c_str(), inPW.c_str());
-			if (result == TRUE) {
-				if (nm.GetClientProxy(inID.c_str()) == nullptr) {
-					std::shared_ptr<ClientProxy> newClientProxy = std::make_shared<ClientProxy>(pKeyData->clntAddr, inID);
+			bool isVerified = Account::VerifyAccount(inID.c_str(), inPW.c_str());
+			bool isLoggedin = nm.GetClientProxy(inID.c_str()) == nullptr;
+			if (isVerified == TRUE && isLoggedin == TRUE) {
+				LOG("NEW CLIENT LOGGED IN");
+				std::shared_ptr<ClientProxy> newClientProxy = std::make_shared<ClientProxy>(pKeyData->pClntSock, pKeyData->clntAddr, inID);
 
-					// TODO: 클라이언트의 추가적인 정보 초기화 (전적 등)
-
-					nm.AddClientProxy(inID.c_str(), newClientProxy);
-
-					// TODO: 서버 접속 성공 패킷 전달
-				}
-				else {
-
-				}
+				// TODO: 클라이언트의 추가적인 정보 초기화 (전적 등)
+				nm.AddClientProxy(inID.c_str(), newClientProxy);
+				nm.SendLoginSuccessPacket(pKeyData->pClntSock);
 			}
 			else {
-				// TODO: 서버 접속 실패 패킷 전달
+				nm.SendLoginFailedPacket(pKeyData->pClntSock);
 			}
-
-			pKeyData->pClntSock->Receive();
+		}
+		else {
+			LOG("MODE_SEND");
+			pKeyData->pClntSock->~TCPSocket();
+			free(pKeyData);
 		}
 	}
 }
