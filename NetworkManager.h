@@ -37,6 +37,10 @@ private:
 		return nullptr;
 	}
 
+	void OpenLoginSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
+	void OpenInfoSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
+	void OpenGameSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
+
 	void AddClientProxy(std::string id, std::shared_ptr<ClientProxy> pCP) { mIdToClientProxyMap[id] = pCP; }
 	void RemoveClientProxy(std::string id) { mIdToClientProxyMap.erase(id); }
 

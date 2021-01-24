@@ -6,28 +6,47 @@ void NetworkManager::Init() {
 }
 
 void NetworkManager::OpenSockets() {
+	// 로그인 소켓 개방
+	std::vector<std::thread> workers;
+
+	std::thread loginAcceptThr;
+	OpenLoginSocket(workers, loginAcceptThr);
+
+	std::thread infoAcceptThr;
+	OpenInfoSocket(workers, infoAcceptThr);
+
+	std::thread gameAcceptThr;
+	OpenGameSocket(workers, gameAcceptThr);
+
+	// TODO: 게임 소켓 개방
+	for (int i = 0; i < (int)mSysInfo.dwNumberOfProcessors; ++i) {
+		workers[i].join();
+	}
+	loginAcceptThr.join();
+}
+
+void NetworkManager::OpenLoginSocket(std::vector<std::thread>& workers, std::thread& acceptThr) {
 	std::shared_ptr<IOCP> pIOCP = SocketUtil::CreateIOCP();
 
-	std::vector<std::thread> compRoutine;
 	for (int i = 0; i < (int)mSysInfo.dwNumberOfProcessors; ++i) {
-		compRoutine.push_back(std::thread(ProcessLoginPacket, pIOCP, std::ref(*this)));
+		workers.push_back(std::thread(ProcessLoginPacket, pIOCP, std::ref(*this)));
 	}
 
-	SocketAddress sa(INADDR_ANY, 9001);
+	SocketAddress loginSa(INADDR_ANY, 9001);
 
-	std::shared_ptr<TCPSocket> pSock = SocketUtil::CreateTCPSocket();
-	pSock->Bind(sa);
-	pSock->Listen(15);
+	std::shared_ptr<TCPSocket> pLoginSock = SocketUtil::CreateTCPSocket();
+	pLoginSock->Bind(loginSa);
+	pLoginSock->Listen(15);
 
-	std::thread acceptThr(AcceptThread, pSock, pIOCP);
+	acceptThr = std::thread(AcceptThread, pLoginSock, pIOCP);
+}
 
-	for (int i = 0; i < (int)mSysInfo.dwNumberOfProcessors; ++i) {
-		compRoutine[i].join();
-	}
-	acceptThr.join();
+void NetworkManager::OpenInfoSocket(std::vector<std::thread>& workers, std::thread& acceptThr) {
 
-	// TODO: 채팅 소켓 개방
-	// TODO: 플레이 소켓 개방
+}
+
+void NetworkManager::OpenGameSocket(std::vector<std::thread>& workers, std::thread& acceptThr) {
+
 }
 
 void NetworkManager::AcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_ptr<IOCP> pIOCP) {
