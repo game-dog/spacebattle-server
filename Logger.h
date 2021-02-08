@@ -7,6 +7,7 @@
 
 namespace Logger {
 	void Log(const char* inFormat, ...);
+	std::string Sprintf(const char* inFormat, ...);
 }
 
 #define LOG(...) Logger::Log(__VA_ARGS__);
