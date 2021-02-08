@@ -17,17 +17,36 @@
 
 class IOCP;
 
+enum {
+	CHAT_REQ,
+	USER_REQ,
+	ROOM_REQ
+};
+
+enum {
+	CHAT_RES,
+	USER_RES,
+	ROOM_RES
+};
+
 class NetworkManager {
 public:
 	void Init();
 
 	void OpenSockets();
+	bool IsVerifiedUser(SocketAddress clntAddr) {
+		auto it = mAddrToClientProxyMap.find(clntAddr);
+		if (it == mAddrToClientProxyMap.end()) return false;
+		return true;
+	}
 
 private:
-	typedef std::unordered_map<std::string, std::shared_ptr<ClientProxy>> IdToClientProxyMap;
+	using IdToClientProxyMap = std::unordered_map<std::string, std::shared_ptr<ClientProxy>>;
+	using AddrToClientProxyMap = std::unordered_map<SocketAddress, std::shared_ptr<ClientProxy>>;
 
 	SYSTEM_INFO mSysInfo;
 	IdToClientProxyMap mIdToClientProxyMap;
+	AddrToClientProxyMap mAddrToClientProxyMap;
 
 	std::shared_ptr<ClientProxy> GetClientProxy(const char* id) {
 		auto it = mIdToClientProxyMap.find(id);
@@ -39,7 +58,7 @@ private:
 
 	void OpenLoginSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
 	void OpenInfoSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
-	void OpenGameSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
+	//void OpenGameSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
 
 	void AddClientProxy(std::string id, std::shared_ptr<ClientProxy> pCP) { mIdToClientProxyMap[id] = pCP; }
 	void RemoveClientProxy(std::string id) { mIdToClientProxyMap.erase(id); }
@@ -67,6 +86,7 @@ private:
 
 	static void AcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_ptr<IOCP> pIOCP);
 	static void ProcessLoginPacket(std::shared_ptr<IOCP> pIOCP, NetworkManager& nm);
+	static void ProcessInfoPacket(std::shared_ptr<IOCP> pIOCP, NetworkManager& nm);
 };
 
 #endif
