@@ -86,8 +86,11 @@ void NetworkManager::ProcessLoginPacket(std::shared_ptr<IOCP> pIOCP, NetworkMana
 				std::shared_ptr<ClientProxy> newClientProxy = std::make_shared<ClientProxy>(pKeyData->pClntSock, pKeyData->clntAddr, inID);
 
 				// TODO: 클라이언트의 추가적인 정보 초기화 (전적 등)
-				nm.AddClientProxy(inID.c_str(), newClientProxy);
+				nm.AddClientProxy(inID.c_str(), pKeyData->clntAddr, newClientProxy);
 				nm.SendLoginSuccessPacket(pKeyData->pClntSock);
+				LOG("Server Welcoming, new client %s as player %s",
+					newClientProxy->GetSocketAddress().ToString().c_str(),
+					newClientProxy->GetClientId().c_str());
 			}
 			else {
 				nm.SendLoginFailedPacket(pKeyData->pClntSock);
@@ -108,6 +111,7 @@ void NetworkManager::ProcessInfoPacket(std::shared_ptr<IOCP> pIOCP, NetworkManag
 		int32_t byteTrans = pIOCP->GetCompletion(pKeyData, ioData);
 		if (ioData->rwMode == MODE_READ) {
 			if (nm.IsVerifiedUser(pKeyData->clntAddr)) {
+				std::shared_ptr<ClientProxy> clientProxy = nm.GetClientProxy(pKeyData->clntAddr);
 				uint8_t header = 0;
 
 				InputBitStream ibs((uint8_t*)ioData->buffer, 4);
@@ -116,15 +120,18 @@ void NetworkManager::ProcessInfoPacket(std::shared_ptr<IOCP> pIOCP, NetworkManag
 				switch (header) {
 				case CHAT_REQ:
 					1;
+					// SendChatPacket();
 					break;
 				case USER_REQ:
 					1;
+					// SendUserInfoPacket();
 					break;
 				case ROOM_REQ:
 					1;
+					// SendRoomInfoPacket();
 					break;
 				default:
-					LOG("Unknown packet type received from %s", "0");
+					LOG("Unknown packet type received from %s", clientProxy->GetSocketAddress().ToString().c_str());
 					break;
 				}
 			}

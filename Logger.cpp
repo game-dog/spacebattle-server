@@ -15,12 +15,14 @@ void Logger::Log(const char* inFormat, ...)
 
 	OutputDebugString(msg);
 	// OutputDebugString("\n");
+
+	// OutputDebugStringA(temp);
+	// OutputDebugStringA("\n");
 }
 
 std::string Logger::Sprintf(const char* inFormat, ...)
 {
-	//not thread safe...
-	static char temp[4096];
+	static char temp[4096]; //not thread safe...
 
 	va_list args;
 	va_start(args, inFormat);

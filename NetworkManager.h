@@ -40,14 +40,6 @@ public:
 		return true;
 	}
 
-private:
-	using IdToClientProxyMap = std::unordered_map<std::string, std::shared_ptr<ClientProxy>>;
-	using AddrToClientProxyMap = std::unordered_map<SocketAddress, std::shared_ptr<ClientProxy>>;
-
-	SYSTEM_INFO mSysInfo;
-	IdToClientProxyMap mIdToClientProxyMap;
-	AddrToClientProxyMap mAddrToClientProxyMap;
-
 	std::shared_ptr<ClientProxy> GetClientProxy(const char* id) {
 		auto it = mIdToClientProxyMap.find(id);
 		if (it != mIdToClientProxyMap.end()) {
@@ -56,12 +48,34 @@ private:
 		return nullptr;
 	}
 
+	std::shared_ptr<ClientProxy> GetClientProxy(SocketAddress addr) {
+		auto it = mAddrToClientProxyMap.find(addr);
+		if (it != mAddrToClientProxyMap.end()) {
+			return it->second;
+		}
+		return nullptr;
+	}
+
+private:
+	using IdToClientProxyMap = std::unordered_map<std::string, std::shared_ptr<ClientProxy>>;
+	using AddrToClientProxyMap = std::unordered_map<SocketAddress, std::shared_ptr<ClientProxy>>;
+
+	SYSTEM_INFO mSysInfo;
+	IdToClientProxyMap mIdToClientProxyMap;
+	AddrToClientProxyMap mAddrToClientProxyMap;
+
 	void OpenLoginSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
 	void OpenInfoSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
 	//void OpenGameSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
 
-	void AddClientProxy(std::string id, std::shared_ptr<ClientProxy> pCP) { mIdToClientProxyMap[id] = pCP; }
-	void RemoveClientProxy(std::string id) { mIdToClientProxyMap.erase(id); }
+	void AddClientProxy(std::string id, SocketAddress sockAddr, std::shared_ptr<ClientProxy> pCP) { 
+		mIdToClientProxyMap[id] = pCP;
+		mAddrToClientProxyMap[sockAddr] = pCP;
+	}
+	void RemoveClientProxy(std::string id, SocketAddress sockAddr) { 
+		mIdToClientProxyMap.erase(id);
+		mAddrToClientProxyMap.erase(sockAddr);
+	}
 
 	void RecvLoginInfo(LPIO_DATA ioData, uint8_t* header, std::string& inID, std::string& inPW) {
 		InputBitStream ibs((uint8_t*)ioData->buffer, 4 + 8 * 40);
