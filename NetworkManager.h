@@ -17,12 +17,20 @@
 
 class IOCP;
 
+/* request header */
 enum {
 	CHAT_REQ,
 	USER_REQ,
 	ROOM_REQ
 };
 
+/* chat request header */
+enum {
+	LOBBY,
+	ROOM
+};
+
+/* response header */
 enum {
 	CHAT_RES,
 	USER_RES,
@@ -56,6 +64,10 @@ public:
 		return nullptr;
 	}
 
+	void SetClientInfoSocket(SocketAddress addr, std::shared_ptr<TCPSocket> sock) {
+		mAddrToClientProxyMap[addr]->SetInfoSocket(sock);
+	}
+
 private:
 	using IdToClientProxyMap = std::unordered_map<std::string, std::shared_ptr<ClientProxy>>;
 	using AddrToClientProxyMap = std::unordered_map<SocketAddress, std::shared_ptr<ClientProxy>>;
@@ -68,11 +80,11 @@ private:
 	void OpenInfoSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
 	//void OpenGameSocket(std::vector<std::thread>& workers, std::thread& acceptThr);
 
-	void AddClientProxy(std::string id, SocketAddress sockAddr, std::shared_ptr<ClientProxy> pCP) { 
+	void AddClientProxy(std::string id, SocketAddress sockAddr, std::shared_ptr<ClientProxy> pCP) {
 		mIdToClientProxyMap[id] = pCP;
 		mAddrToClientProxyMap[sockAddr] = pCP;
 	}
-	void RemoveClientProxy(std::string id, SocketAddress sockAddr) { 
+	void RemoveClientProxy(std::string id, SocketAddress sockAddr) {
 		mIdToClientProxyMap.erase(id);
 		mAddrToClientProxyMap.erase(sockAddr);
 	}
@@ -98,9 +110,16 @@ private:
 		pSock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
 	}
 
-	static void AcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_ptr<IOCP> pIOCP);
+	static void LoginAcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_ptr<IOCP> pIOCP);
+	static void InfoAcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_ptr<IOCP> pIOCP, NetworkManager& nm);
+
 	static void ProcessLoginPacket(std::shared_ptr<IOCP> pIOCP, NetworkManager& nm);
 	static void ProcessInfoPacket(std::shared_ptr<IOCP> pIOCP, NetworkManager& nm);
+
+	void HandlePacket(const char* buffer, SocketAddress addr);
+	void SendChatPacket(InputBitStream& ibs, const SocketAddress& addr);
+	//void SendUserInfoPacket();
+	//void SendRoomInfoPacket();
 };
 
 #endif

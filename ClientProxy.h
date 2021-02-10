@@ -6,16 +6,30 @@
 #include "TCPSocket.h"
 #include "SocketAddress.h"
 
+enum {
+	LOCATION_LOBBY,
+	LOCATION_ROOM
+};
+
 class ClientProxy {
 public:
-	ClientProxy(const std::shared_ptr<TCPSocket> inSock, const SocketAddress& inSocketAddress, const std::string& inID) : 
-		mSock(inSock), mSockAddr(inSocketAddress), mId(inID) {}
+	ClientProxy(const SocketAddress& inSocketAddress, const std::string& inID) : 
+		mSockAddr(inSocketAddress), mId(inID) {}
 
+	int GetLocation() const { return mLocation; }
+	const std::shared_ptr<TCPSocket>& GetInfoSocket() const { return mInfoSock; }
 	const SocketAddress& GetSocketAddress()	const { return mSockAddr; }
 	const std::string& GetClientId() { return mId; }
 
+	void SetInfoSocket(std::shared_ptr<TCPSocket> sock) { mInfoSock = sock; }
+	void SetGameSocket(std::shared_ptr<TCPSocket> sock) { mGameSock = sock; }
+
 private:
-	std::shared_ptr<TCPSocket> mSock;
+	int mLocation;
+	int mRoomNumber;
+
+	std::shared_ptr<TCPSocket> mInfoSock;
+	std::shared_ptr<TCPSocket> mGameSock;
 	SocketAddress mSockAddr;
 	std::string mId;
 };

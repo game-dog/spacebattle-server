@@ -39,7 +39,7 @@ void NetworkManager::OpenLoginSocket(std::vector<std::thread>& workers, std::thr
 	pLoginSock->Bind(loginSa);
 	pLoginSock->Listen(15);
 
-	acceptThr = std::thread(AcceptThread, pLoginSock, pIOCP);
+	acceptThr = std::thread(LoginAcceptThread, pLoginSock, pIOCP);
 }
 
 void NetworkManager::OpenInfoSocket(std::vector<std::thread>& workers, std::thread& acceptThr) {
@@ -55,14 +55,30 @@ void NetworkManager::OpenInfoSocket(std::vector<std::thread>& workers, std::thre
 	pInfoSock->Bind(infoSa);
 	pInfoSock->Listen(15);
 
-	acceptThr = std::thread(AcceptThread, pInfoSock, pIOCP);
+	acceptThr = std::thread(InfoAcceptThread, pInfoSock, pIOCP, std::ref(*this));
 }
 
-void NetworkManager::AcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_ptr<IOCP> pIOCP) {
+void NetworkManager::LoginAcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_ptr<IOCP> pIOCP) {
 	while (1) {
 		SocketAddress clntAddr;
 		std::shared_ptr<TCPSocket> pClntSock(pSock->Accept(clntAddr));
 
+		pIOCP->ConnectSockToIOCP(pClntSock, clntAddr);
+		pClntSock->Receive();
+	}
+}
+
+void NetworkManager::InfoAcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_ptr<IOCP> pIOCP, NetworkManager &nm) {
+	while (1) {
+		SocketAddress clntAddr;
+		std::shared_ptr<TCPSocket> pClntSock(pSock->Accept(clntAddr));
+
+		if (!nm.IsVerifiedUser(clntAddr)) {		
+			LOG("Bad incoming packet from unverified client at socket %s", "0");
+			continue;
+		}
+
+		nm.SetClientInfoSocket(clntAddr, pClntSock);
 		pIOCP->ConnectSockToIOCP(pClntSock, clntAddr);
 		pClntSock->Receive();
 	}
@@ -83,7 +99,7 @@ void NetworkManager::ProcessLoginPacket(std::shared_ptr<IOCP> pIOCP, NetworkMana
 			bool isVerified = Account::VerifyAccount(inID.c_str(), inPW.c_str());
 			bool isLoggedin = nm.GetClientProxy(inID.c_str()) == nullptr;
 			if (isVerified == TRUE && isLoggedin == TRUE) {
-				std::shared_ptr<ClientProxy> newClientProxy = std::make_shared<ClientProxy>(pKeyData->pClntSock, pKeyData->clntAddr, inID);
+				std::shared_ptr<ClientProxy> newClientProxy = std::make_shared<ClientProxy>(pKeyData->clntAddr, inID);
 
 				// TODO: 클라이언트의 추가적인 정보 초기화 (전적 등)
 				nm.AddClientProxy(inID.c_str(), pKeyData->clntAddr, newClientProxy);
@@ -110,35 +126,63 @@ void NetworkManager::ProcessInfoPacket(std::shared_ptr<IOCP> pIOCP, NetworkManag
 	while (1) {
 		int32_t byteTrans = pIOCP->GetCompletion(pKeyData, ioData);
 		if (ioData->rwMode == MODE_READ) {
-			if (nm.IsVerifiedUser(pKeyData->clntAddr)) {
-				std::shared_ptr<ClientProxy> clientProxy = nm.GetClientProxy(pKeyData->clntAddr);
-				uint8_t header = 0;
+			nm.HandlePacket(ioData->buffer, pKeyData->clntAddr);
+		}
+	}
+}
 
-				InputBitStream ibs((uint8_t*)ioData->buffer, 4);
-				ibs.ReadBits(reinterpret_cast<void*>(header), 4);
+void NetworkManager::HandlePacket(const char* buffer, SocketAddress addr) {
+	std::shared_ptr<ClientProxy> clientProxy = GetClientProxy(addr);
+	uint8_t header = 0;
 
-				switch (header) {
-				case CHAT_REQ:
-					1;
-					// SendChatPacket();
-					break;
-				case USER_REQ:
-					1;
-					// SendUserInfoPacket();
-					break;
-				case ROOM_REQ:
-					1;
-					// SendRoomInfoPacket();
-					break;
-				default:
-					LOG("Unknown packet type received from %s", clientProxy->GetSocketAddress().ToString().c_str());
-					break;
-				}
-			}
-			else {
-				// TODO: 인증이 되지 않은 사용자에게 받은 패킷은 무시 후, 소켓 연결 종료
-				LOG("Bad incoming packet from unknown client at socket %s", "0");
+	InputBitStream ibs((uint8_t*)buffer, 4);
+	ibs.ReadBits(reinterpret_cast<void*>(header), 4);
+
+	switch (header) {
+	case CHAT_REQ:
+		SendChatPacket(ibs, addr);
+		break;
+	case USER_REQ:
+		// SendUserInfoPacket(ibs);
+		break;
+	case ROOM_REQ:
+		// SendRoomInfoPacket(ibs);
+		break;
+	default:
+		LOG("Unknown packet type received from %s", clientProxy->GetSocketAddress().ToString().c_str());
+		break;
+	}
+}
+
+void NetworkManager::SendChatPacket(InputBitStream& ibs, const SocketAddress& addr) {
+	uint8_t header = 0, sz = 0;
+	ibs.ReadBits(reinterpret_cast<void*>(header), 1);
+	ibs.ReadBits(reinterpret_cast<void*>(sz), 8);
+
+	uint8_t* content = new uint8_t[sz];
+	ibs.ReadBytes(reinterpret_cast<void*>(content), sz);
+
+	std::string id = mAddrToClientProxyMap[addr]->GetClientId();
+	OutputBitStream obs;
+
+	switch (header) {
+	case LOBBY:
+		obs.WriteBits(static_cast<uint8_t>(CHAT_RES), 4);
+		obs.WriteBits(static_cast<uint8_t>(0), 1);
+		obs.WriteBits(reinterpret_cast<void*>(const_cast<char*>(id.c_str())), 8 * 20);
+		obs.WriteBits(sz, 8);
+		obs.WriteBits(reinterpret_cast<void*>(content), 8 * sz);
+		delete[] content;
+		for (auto& c : mAddrToClientProxyMap) {
+			if (c.second->GetLocation() == LOCATION_LOBBY) {
+				const std::shared_ptr<TCPSocket> sock = c.second->GetInfoSocket();
+				sock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
 			}
 		}
+		break;
+	case ROOM:
+		// TODO: 채팅 패킷을 보낸 유저가 소속된 방이 어디인지 확인
+		// TODO: 확인된 방 번호에 속해있는 유저에게 채팅 패킷 전달
+		break;
 	}
 }
