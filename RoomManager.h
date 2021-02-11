@@ -7,6 +7,7 @@ class RoomManager {
 private:
 	class Room {
 	public:
+		Room() : owner(""), participant(""), mStatus(false), mRoomNumber(-1) {}
 		Room(int mRoomNumber, std::string owner) :
 			owner(owner),
 			participant(""),
