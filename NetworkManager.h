@@ -13,6 +13,7 @@
 #include "BitStream.h"
 #include "Account.h"
 #include "ClientProxy.h"
+#include "RoomManager.h"
 #include "Logger.h"
 
 class IOCP;

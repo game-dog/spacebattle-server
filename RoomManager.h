@@ -7,15 +7,21 @@ class RoomManager {
 private:
 	class Room {
 	public:
-		Room() : mStatus(false) {}
-		std::string GetOtherUser(std::string id) {
-			if (id == user1) return user2;
-			else return user1;
+		Room(int mRoomNumber, std::string owner) :
+			owner(owner),
+			participant(""),
+			mStatus(false),
+			mRoomNumber(mRoomNumber) {}
+
+		std::string GetOpponentId(std::string id) const {
+			if (id == owner) return participant;
+			else return owner;
 		}
+		
+		void SetParticipant(std::string id) { participant = id; }
 
 	private:
-		std::string user1;
-		std::string user2;
+		std::string owner, participant;
 		bool mStatus;
 		int mRoomNumber;
 	};
@@ -24,8 +30,10 @@ public:
 	static RoomManager* GetInstance();
 	static void DestroyInstance();
 
-	int CreateRoom();
+	int CreateRoom(std::string owner);
 	void CloseRoom();
+
+	const Room& GetRoomInstance(int number) { return mRoomMap[number]; }
 
 private:
 	RoomManager() : mNext(0) {};

@@ -172,7 +172,6 @@ void NetworkManager::SendChatPacket(InputBitStream& ibs, const SocketAddress& ad
 		obs.WriteBits(reinterpret_cast<void*>(const_cast<char*>(id.c_str())), 8 * 20);
 		obs.WriteBits(sz, 8);
 		obs.WriteBits(reinterpret_cast<void*>(content), 8 * sz);
-		delete[] content;
 		for (auto& c : mAddrToClientProxyMap) {
 			if (c.second->GetLocation() == LOCATION_LOBBY) {
 				const std::shared_ptr<TCPSocket> sock = c.second->GetInfoSocket();
@@ -181,8 +180,19 @@ void NetworkManager::SendChatPacket(InputBitStream& ibs, const SocketAddress& ad
 		}
 		break;
 	case ROOM:
-		// TODO: 채팅 패킷을 보낸 유저가 소속된 방이 어디인지 확인
-		// TODO: 확인된 방 번호에 속해있는 유저에게 채팅 패킷 전달
+		int roomNumber = mAddrToClientProxyMap[addr]->GetRoomNumber();
+		std::string id = mAddrToClientProxyMap[addr]->GetClientId();
+		std::string opponent = RoomManager::GetInstance()->GetRoomInstance(roomNumber).GetOpponentId(id);
+
+		std::shared_ptr<TCPSocket> sock = mIdToClientProxyMap[opponent]->GetInfoSocket();
+		obs.WriteBits(static_cast<uint8_t>(CHAT_RES), 4);
+		obs.WriteBits(static_cast<uint8_t>(1), 1);
+		obs.WriteBits(reinterpret_cast<void*>(const_cast<char*>(id.c_str())), 8 * 20);
+		obs.WriteBits(sz, 8);
+		obs.WriteBits(reinterpret_cast<void*>(content), 8 * sz);
+		sock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
 		break;
 	}
+
+	delete[] content;
 }

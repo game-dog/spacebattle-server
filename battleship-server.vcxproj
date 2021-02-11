@@ -26,7 +26,9 @@
     <ClCompile Include="Logger.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="NetworkManager.cpp" />
+    <ClCompile Include="RoomManager.cpp" />
     <ClCompile Include="Server.cpp" />
+    <ClCompile Include="SocketAddress.cpp" />
     <ClCompile Include="SocketUtil.cpp" />
     <ClCompile Include="TCPSocket.cpp" />
     <ClCompile Include="Account.cpp" />
@@ -39,6 +41,7 @@
     <ClInclude Include="IOCP.h" />
     <ClInclude Include="Logger.h" />
     <ClInclude Include="NetworkManager.h" />
+    <ClInclude Include="RoomManager.h" />
     <ClInclude Include="Server.h" />
     <ClInclude Include="SocketAddress.h" />
     <ClInclude Include="SocketUtil.h" />

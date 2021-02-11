@@ -48,6 +48,12 @@
     <ClCompile Include="Crypto.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="SocketAddress.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="RoomManager.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BitStream.h">
@@ -84,6 +90,9 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="ClientProxy.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="RoomManager.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

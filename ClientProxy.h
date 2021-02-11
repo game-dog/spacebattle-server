@@ -17,6 +17,10 @@ public:
 		mSockAddr(inSocketAddress), mId(inID) {}
 
 	int GetLocation() const { return mLocation; }
+	int GetRoomNumber() const {
+		if (mLocation != LOCATION_LOBBY) return -1;
+		return mRoomNumber;
+	}
 	const std::shared_ptr<TCPSocket>& GetInfoSocket() const { return mInfoSock; }
 	const SocketAddress& GetSocketAddress()	const { return mSockAddr; }
 	const std::string& GetClientId() { return mId; }
