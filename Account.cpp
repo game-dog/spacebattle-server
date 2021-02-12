@@ -8,6 +8,8 @@ void Account::GetAccountData() {
 	for (auto& entry : dat) {
 		mIDtoUserData[entry[1]] = std::make_shared<UserData>();
 		mIDtoUserData[entry[1]]->pwDigest = entry[2];
+		mIDtoUserData[entry[1]]->win = stoi(entry[3]);
+		mIDtoUserData[entry[1]]->lose = stoi(entry[4]);
 	}
 }
 

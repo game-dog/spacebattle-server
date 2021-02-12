@@ -13,11 +13,15 @@ class Account {
 public:
 	static void GetAccountData();
 	static std::string GetPasswd(const char* id) { return mIDtoUserData[id]->pwDigest; }
+	static int GetWin(const char* id) { return mIDtoUserData[id]->win; }
+	static int GetLose(const char* id) { return mIDtoUserData[id]->lose; }
 	static bool VerifyAccount(const char* id, const char* pw);
 
 	class UserData {
 	public:
 		std::string pwDigest;
+		int win;
+		int lose;
 	};
 
 private:
