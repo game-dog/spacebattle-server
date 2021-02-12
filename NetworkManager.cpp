@@ -68,12 +68,12 @@ void NetworkManager::LoginAcceptThread(std::shared_ptr<TCPSocket> pSock, std::sh
 	}
 }
 
-void NetworkManager::InfoAcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_ptr<IOCP> pIOCP, NetworkManager &nm) {
+void NetworkManager::InfoAcceptThread(std::shared_ptr<TCPSocket> pSock, std::shared_ptr<IOCP> pIOCP, NetworkManager& nm) {
 	while (1) {
 		SocketAddress clntAddr;
 		std::shared_ptr<TCPSocket> pClntSock(pSock->Accept(clntAddr));
 
-		if (!nm.IsVerifiedUser(clntAddr)) {		
+		if (!nm.IsVerifiedUser(clntAddr)) {
 			LOG("Bad incoming packet from unverified client at socket %s", "0");
 			continue;
 		}
@@ -143,10 +143,10 @@ void NetworkManager::HandlePacket(const char* buffer, SocketAddress addr) {
 		SendChatPacket(ibs, addr);
 		break;
 	case USER_REQ:
-		// SendUserInfoPacket(ibs);
+		SendUserInfoPacket(ibs, addr);
 		break;
 	case ROOM_REQ:
-		// SendRoomInfoPacket(ibs);
+		SendRoomInfoPacket(ibs, addr);
 		break;
 	default:
 		LOG("Unknown packet type received from %s", clientProxy->GetSocketAddress().ToString().c_str());
@@ -187,7 +187,8 @@ void NetworkManager::SendChatPacket(InputBitStream& ibs, const SocketAddress& ad
 		std::shared_ptr<TCPSocket> sock = mIdToClientProxyMap[opponent]->GetInfoSocket();
 		obs.WriteBits(static_cast<uint8_t>(CHAT_RES), 4);
 		obs.WriteBits(static_cast<uint8_t>(1), 1);
-		obs.WriteBits(reinterpret_cast<void*>(const_cast<char*>(id.c_str())), 8 * 20);
+		//obs.WriteBits(reinterpret_cast<void*>(const_cast<char*>(id.c_str())), 8 * 20);
+		obs.WriteBits(reinterpret_cast<const void*>(id.c_str()), 8 * 20);
 		obs.WriteBits(sz, 8);
 		obs.WriteBits(reinterpret_cast<void*>(content), 8 * sz);
 		sock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
@@ -195,4 +196,52 @@ void NetworkManager::SendChatPacket(InputBitStream& ibs, const SocketAddress& ad
 	}
 
 	delete[] content;
+}
+
+void NetworkManager::SendUserInfoPacket(InputBitStream &ibs, const SocketAddress& addr) {
+	uint8_t header = 0;
+	ibs.ReadBits(reinterpret_cast<void*>(header), 1);
+
+	uint8_t* id = new uint8_t[20];
+	ibs.ReadBytes(reinterpret_cast<void*>(id), 20);
+
+	OutputBitStream obs;
+	switch (header) {
+	case SIMPLE: {
+		uint16_t sz = mIdToClientProxyMap.size();
+		obs.WriteBits(static_cast<uint8_t>(USER_RES), 4);
+		obs.WriteBits(static_cast<uint8_t>(0), 1);
+		obs.WriteBits(reinterpret_cast<void*>(&sz), 16);
+		for (auto& u : mIdToClientProxyMap) {
+			obs.WriteBits(static_cast<uint8_t>(1), 0);
+			obs.WriteBits(reinterpret_cast<const void*>(u.first.c_str()), 8 * 20);
+		}
+		std::shared_ptr<TCPSocket> sock = mAddrToClientProxyMap[addr]->GetInfoSocket();
+		sock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
+	}
+		break;
+	case DETAIL: {
+		obs.WriteBits(static_cast<uint8_t>(USER_RES), 4);
+		obs.WriteBits(static_cast<uint8_t>(1), 1);
+		obs.WriteBits(static_cast<uint8_t>(1), 16);
+		obs.WriteBits(reinterpret_cast<void*>(id), 20);
+
+		int win = Account::GetWin(reinterpret_cast<const char*>(id));
+		int lose = Account::GetLose(reinterpret_cast<const char*>(id));
+		int rank = 0;
+		obs.WriteBits(reinterpret_cast<const void*>(&win), 16);
+		obs.WriteBits(reinterpret_cast<const void*>(&lose), 16);
+		obs.WriteBits(reinterpret_cast<const void*>(&rank), 16);
+
+		std::shared_ptr<TCPSocket> sock = mAddrToClientProxyMap[addr]->GetInfoSocket();
+		sock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
+	}
+		break;
+	default:
+		break;
+	}
+}
+
+void NetworkManager::SendRoomInfoPacket(InputBitStream& ibs, const SocketAddress& addr) {
+
 }

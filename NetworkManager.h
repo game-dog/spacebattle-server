@@ -31,6 +31,12 @@ enum {
 	ROOM
 };
 
+/* user info request header */
+enum {
+	SIMPLE,
+	DETAIL
+};
+
 /* response header */
 enum {
 	CHAT_RES,
@@ -119,8 +125,8 @@ private:
 
 	void HandlePacket(const char* buffer, SocketAddress addr);
 	void SendChatPacket(InputBitStream& ibs, const SocketAddress& addr);
-	//void SendUserInfoPacket();
-	//void SendRoomInfoPacket();
+	void SendUserInfoPacket(InputBitStream &ibs, const SocketAddress& addr);
+	void SendRoomInfoPacket(InputBitStream &ibs, const SocketAddress& addr);
 };
 
 #endif
