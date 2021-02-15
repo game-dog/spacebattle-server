@@ -53,6 +53,15 @@ enum {
 	ROOM_RES
 };
 
+/* notification */
+enum {
+	NOTIFICATION_ENTER,
+	NOTIFICATION_LEAVE,
+	NOTIFICATION_DELE,
+	NOTIFICATION_FULL,
+	NOTIFICATION_ENTER_OK
+};
+
 class NetworkManager {
 public:
 	void Init();

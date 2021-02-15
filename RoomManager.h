@@ -35,6 +35,8 @@ public:
 	void SetParticipantId(int roomNumber, std::string id) { mRoomMap[roomNumber].participant = id; }
 	void DelegateOwnership(int roomNumber);
 
+	bool isFull(int roomNumber) { return mRoomMap[roomNumber].participant != ""; }
+
 	//const Room& GetRoomInstance(int number) { return mRoomMap[number]; }
 	//const std::unordered_map<int, Room>& GetRoomMap() { return mRoomMap; }
 

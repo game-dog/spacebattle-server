@@ -295,7 +295,7 @@ void NetworkManager::SendRoomInfoPacket(InputBitStream& ibs, const SocketAddress
 			}
 		}
 
-		mAddrToClientProxyMap[addr]->EnterToRoom(roomNumber);
+		mAddrToClientProxyMap[addr]->EnterRoom(roomNumber);
 	}
 		break;
 	case CLOSE: {
@@ -333,18 +333,58 @@ void NetworkManager::SendRoomInfoPacket(InputBitStream& ibs, const SocketAddress
 		}
 
 		RoomManager::GetInstance()->CloseRoom(roomNumber);
-		mAddrToClientProxyMap[addr]->ReturnToLobby();
+		mAddrToClientProxyMap[addr]->LeaveRoom();
 	}
 		break;
 	case ENTER: {
-		std::string id(21, 0);
-		ibs.ReadBits(reinterpret_cast<void*>(&id), 20);
-		// TODO: 방에 인원이 다 찬 경우 입장 불가 알림
-		// TODO: 방장에게 누군가 들어왔음을 알림
+		uint16_t roomNumber;
+		ibs.ReadBits(reinterpret_cast<void*>(&roomNumber), 16);
+
+		std::string participantId = mAddrToClientProxyMap[addr]->GetClientId();
+		const std::shared_ptr<TCPSocket> participantSock = mAddrToClientProxyMap[addr]->GetInfoSocket();
+		std::string ownerId = RoomManager::GetInstance()->GetOwnerId(roomNumber);
+		const std::shared_ptr<TCPSocket> ownerSock = mIdToClientProxyMap[ownerId]->GetInfoSocket();
+
+		// 방이 만원인 경우 입장 불가 알림
+		if (RoomManager::GetInstance()->isFull(roomNumber)) {
+			obs.WriteBits(static_cast<uint8_t>(ROOM_RES), 4);
+			obs.WriteBits(static_cast<uint8_t>(1), 1);
+			obs.WriteBits(static_cast<uint8_t>(NOTIFICATION_FULL), 4);
+			participantSock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
+			break;
+		}
+
+		// 방장에게 누군가 들어왔음을 알림
+		obs.WriteBits(static_cast<uint8_t>(ROOM_RES), 4);
+		obs.WriteBits(static_cast<uint8_t>(1), 1);
+		obs.WriteBits(static_cast<uint8_t>(NOTIFICATION_ENTER), 4);
+		obs.WriteBits(reinterpret_cast<const void*>(participantId.c_str()), 8 * 20);	
+		ownerSock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
+
+		// 참가자에게 입장 허가 패킷 전달
+		obs.WriteBits(static_cast<uint8_t>(ROOM_RES), 4);
+		obs.WriteBits(static_cast<uint8_t>(1), 1);
+		obs.WriteBits(static_cast<uint8_t>(NOTIFICATION_ENTER_OK), 4);
+		ownerSock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
+
+		mAddrToClientProxyMap[addr]->EnterRoom(roomNumber);
 	}
 		break;
-	case LEAVE: {
+	case LEAVE: {	
+		uint16_t roomNumber;
+		ibs.ReadBits(reinterpret_cast<void*>(&roomNumber), 16);
 
+		std::string ownerId = RoomManager::GetInstance()->GetOwnerId(roomNumber);
+		const std::shared_ptr<TCPSocket> ownerSock = mIdToClientProxyMap[ownerId]->GetInfoSocket();
+
+		// 방장에게 참가자가 퇴장했음을 알림
+		obs.WriteBits(static_cast<uint8_t>(ROOM_RES), 4);
+		obs.WriteBits(static_cast<uint8_t>(1), 1);
+		obs.WriteBits(static_cast<uint8_t>(NOTIFICATION_LEAVE), 4);
+		ownerSock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
+
+		// 참가자의 상태를 변경
+		mAddrToClientProxyMap[addr]->LeaveRoom();
 	}
 		break;
 	default:

@@ -28,8 +28,8 @@ public:
 	void SetInfoSocket(std::shared_ptr<TCPSocket> sock) { mInfoSock = sock; }
 	void SetGameSocket(std::shared_ptr<TCPSocket> sock) { mGameSock = sock; }
 
-	void EnterToRoom(int roomNumber) { mLocation = LOCATION_ROOM; mRoomNumber = roomNumber; }
-	void ReturnToLobby() { mLocation = LOCATION_LOBBY; }
+	void EnterRoom(int roomNumber) { mLocation = LOCATION_ROOM; mRoomNumber = roomNumber; }
+	void LeaveRoom() { mLocation = LOCATION_LOBBY; }
 
 private:
 	int mLocation;
