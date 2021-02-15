@@ -14,7 +14,7 @@ enum {
 class ClientProxy {
 public:
 	ClientProxy(const SocketAddress& inSocketAddress, const std::string& inID) : 
-		mSockAddr(inSocketAddress), mId(inID) {}
+		mLocation(LOCATION_LOBBY), mRoomNumber(0), mSockAddr(inSocketAddress), mId(inID) {}
 
 	int GetLocation() const { return mLocation; }
 	int GetRoomNumber() const {
@@ -27,6 +27,9 @@ public:
 
 	void SetInfoSocket(std::shared_ptr<TCPSocket> sock) { mInfoSock = sock; }
 	void SetGameSocket(std::shared_ptr<TCPSocket> sock) { mGameSock = sock; }
+
+	void EnterToRoom(int roomNumber) { mLocation = LOCATION_ROOM; mRoomNumber = roomNumber; }
+	void ReturnToLobby() { mLocation = LOCATION_LOBBY; }
 
 private:
 	int mLocation;

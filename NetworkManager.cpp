@@ -136,7 +136,7 @@ void NetworkManager::HandlePacket(const char* buffer, SocketAddress addr) {
 	uint8_t header = 0;
 
 	InputBitStream ibs((uint8_t*)buffer, 4);
-	ibs.ReadBits(reinterpret_cast<void*>(header), 4);
+	ibs.ReadBits(reinterpret_cast<void*>(&header), 4);
 
 	switch (header) {
 	case CHAT_REQ:
@@ -156,8 +156,8 @@ void NetworkManager::HandlePacket(const char* buffer, SocketAddress addr) {
 
 void NetworkManager::SendChatPacket(InputBitStream& ibs, const SocketAddress& addr) {
 	uint8_t header = 0, sz = 0;
-	ibs.ReadBits(reinterpret_cast<void*>(header), 1);
-	ibs.ReadBits(reinterpret_cast<void*>(sz), 8);
+	ibs.ReadBits(reinterpret_cast<void*>(&header), 1);
+	ibs.ReadBits(reinterpret_cast<void*>(&sz), 8);
 
 	uint8_t* content = new uint8_t[sz];
 	ibs.ReadBytes(reinterpret_cast<void*>(content), sz);
@@ -173,16 +173,16 @@ void NetworkManager::SendChatPacket(InputBitStream& ibs, const SocketAddress& ad
 		obs.WriteBits(sz, 8);
 		obs.WriteBits(reinterpret_cast<void*>(content), 8 * sz);
 		for (auto& c : mAddrToClientProxyMap) {
-			if (c.second->GetLocation() == LOCATION_LOBBY) {
+			if (c.second->GetLocation() == LOCATION_LOBBY) { // TODO: 유저가 로비에 있지 않더라도 정보를 수신해야 하는가?
 				const std::shared_ptr<TCPSocket> sock = c.second->GetInfoSocket();
 				sock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
 			}
 		}
 		break;
-	case ROOM:
+	case ROOM: {
 		int roomNumber = mAddrToClientProxyMap[addr]->GetRoomNumber();
 		std::string id = mAddrToClientProxyMap[addr]->GetClientId();
-		std::string opponent = RoomManager::GetInstance()->GetRoomInstance(roomNumber).GetOpponentId(id);
+		std::string opponent = RoomManager::GetInstance()->GetOpponentId(roomNumber, id);
 
 		std::shared_ptr<TCPSocket> sock = mIdToClientProxyMap[opponent]->GetInfoSocket();
 		obs.WriteBits(static_cast<uint8_t>(CHAT_RES), 4);
@@ -192,6 +192,10 @@ void NetworkManager::SendChatPacket(InputBitStream& ibs, const SocketAddress& ad
 		obs.WriteBits(sz, 8);
 		obs.WriteBits(reinterpret_cast<void*>(content), 8 * sz);
 		sock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
+	}
+		break;
+	default:
+		LOG("Unknown request type received from %s", mAddrToClientProxyMap[addr]->GetSocketAddress().ToString().c_str());
 		break;
 	}
 
@@ -200,7 +204,7 @@ void NetworkManager::SendChatPacket(InputBitStream& ibs, const SocketAddress& ad
 
 void NetworkManager::SendUserInfoPacket(InputBitStream &ibs, const SocketAddress& addr) {
 	uint8_t header = 0;
-	ibs.ReadBits(reinterpret_cast<void*>(header), 1);
+	ibs.ReadBits(reinterpret_cast<void*>(&header), 1);
 
 	uint8_t* id = new uint8_t[20];
 	ibs.ReadBytes(reinterpret_cast<void*>(id), 20);
@@ -238,10 +242,112 @@ void NetworkManager::SendUserInfoPacket(InputBitStream &ibs, const SocketAddress
 	}
 		break;
 	default:
+		LOG("Unknown request type received from %s", mAddrToClientProxyMap[addr]->GetSocketAddress().ToString().c_str());
 		break;
 	}
 }
 
 void NetworkManager::SendRoomInfoPacket(InputBitStream& ibs, const SocketAddress& addr) {
+	uint8_t header;
+	ibs.ReadBits(reinterpret_cast<void*>(&header), 3);
 
+	OutputBitStream obs;
+	switch (header) {
+	case LIST: {
+		obs.WriteBits(static_cast<uint8_t>(ROOM_RES), 4);
+		obs.WriteBits(static_cast<uint8_t>(0), 1);
+
+		uint16_t sz = RoomManager::GetInstance()->GetRoomCount();
+		obs.WriteBits(reinterpret_cast<const void*>(&sz), 16);
+
+		RoomManager* roomManager = RoomManager::GetInstance();
+		std::vector<int> roomNumbers = roomManager->GetRoomNumbers();
+		for (int i = 0; i < roomNumbers.size(); ++i) {
+			obs.WriteBits(static_cast<uint8_t>(0), 1);
+			obs.WriteBits(reinterpret_cast<const void*>(&roomNumbers[i]), 16);
+			bool roomStatus = roomManager->GetRoomStatus(roomNumbers[i]);
+			obs.WriteBits(static_cast<uint8_t>(roomStatus), 1);
+			std::string ownerId = roomManager->GetOwnerId(roomNumbers[i]);
+			obs.WriteBits(reinterpret_cast<const void*>(ownerId.c_str()), 8 * 20);
+		}
+
+		std::shared_ptr<TCPSocket> sock = mAddrToClientProxyMap[addr]->GetInfoSocket();
+		sock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
+	}
+		break;
+	case CREATE: {
+		std::string id = mAddrToClientProxyMap[addr]->GetClientId();
+		int roomNumber = RoomManager::GetInstance()->CreateRoom(id);
+
+		// 해당 방에 대하여 OPEN 상태로 INFO 패킷 전송
+		obs.WriteBits(static_cast<uint8_t>(ROOM_RES), 4);
+		obs.WriteBits(static_cast<uint8_t>(0), 1);
+		obs.WriteBits(static_cast<uint8_t>(1), 16);
+		obs.WriteBits(static_cast<uint8_t>(0), 1);
+		obs.WriteBits(reinterpret_cast<const void*>(&roomNumber), 16);
+		obs.WriteBits(static_cast<uint8_t>(1), 1);
+		obs.WriteBits(reinterpret_cast<const void*>(id.c_str()), 8 * 20);
+
+		for (auto& c : mAddrToClientProxyMap) {
+			if (c.second->GetLocation() == LOCATION_LOBBY) { // TODO: 유저가 로비에 있지 않더라도 정보를 수신해야 하는가?
+				const std::shared_ptr<TCPSocket> sock = c.second->GetInfoSocket();
+				sock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
+			}
+		}
+
+		mAddrToClientProxyMap[addr]->EnterToRoom(roomNumber);
+	}
+		break;
+	case CLOSE: {
+		RoomManager* roomManager = RoomManager::GetInstance();
+
+		// 방장이 아닌 사람이 특정 방에 대한 CLOSE 패킷을 날릴 경우
+		std::string id = mAddrToClientProxyMap[addr]->GetClientId();
+		int roomNumber = mAddrToClientProxyMap[addr]->GetRoomNumber();
+
+		if (roomManager->GetOwnerId(roomNumber) != id) {
+			LOG("Packet deceived as owner received from %s", mAddrToClientProxyMap[addr]->GetSocketAddress().ToString().c_str());
+			break;
+		}
+
+		// 방에 참가자가 있을 경우에는 방장 권한을 위임
+		if (roomManager->GetOpponentId(roomNumber, id) != "") {
+			// TODO: 참가자에게 방장 권한이 위임되었다는 사실을 notify
+			roomManager->DelegateOwnership(roomNumber);
+			LOG("The ownership of room %d was delegated from %s", roomNumber, mAddrToClientProxyMap[addr]->GetClientId());
+			break;
+		}
+
+		// 해당 방에 대하여 CLOSED 상태로 INFO 패킷 전송
+		obs.WriteBits(static_cast<uint8_t>(ROOM_RES), 4);
+		obs.WriteBits(static_cast<uint8_t>(0), 1);
+		obs.WriteBits(static_cast<uint8_t>(1), 16);
+		obs.WriteBits(static_cast<uint8_t>(1), 1);
+		obs.WriteBits(reinterpret_cast<const void*>(&roomNumber), 16);
+
+		for (auto& c : mAddrToClientProxyMap) {
+			if (c.second->GetLocation() == LOCATION_LOBBY) { // TODO: 유저가 로비에 있지 않더라도 정보를 수신해야 하는가?
+				const std::shared_ptr<TCPSocket> sock = c.second->GetInfoSocket();
+				sock->Send(reinterpret_cast<const void*>(obs.GetBufferPtr()), obs.GetByteLength());
+			}
+		}
+
+		RoomManager::GetInstance()->CloseRoom(roomNumber);
+		mAddrToClientProxyMap[addr]->ReturnToLobby();
+	}
+		break;
+	case ENTER: {
+		std::string id(21, 0);
+		ibs.ReadBits(reinterpret_cast<void*>(&id), 20);
+		// TODO: 방에 인원이 다 찬 경우 입장 불가 알림
+		// TODO: 방장에게 누군가 들어왔음을 알림
+	}
+		break;
+	case LEAVE: {
+
+	}
+		break;
+	default:
+		break;
+	}
 }

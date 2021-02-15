@@ -7,21 +7,13 @@ class RoomManager {
 private:
 	class Room {
 	public:
-		Room() : owner(""), participant(""), mStatus(false), mRoomNumber(-1) {}
+		Room() : owner(""), participant(""), mStatus(false), mRoomNumber(0) {}
 		Room(int mRoomNumber, std::string owner) :
 			owner(owner),
 			participant(""),
 			mStatus(false),
 			mRoomNumber(mRoomNumber) {}
 
-		std::string GetOpponentId(std::string id) const {
-			if (id == owner) return participant;
-			else return owner;
-		}
-		
-		void SetParticipant(std::string id) { participant = id; }
-
-	private:
 		std::string owner, participant;
 		bool mStatus;
 		int mRoomNumber;
@@ -32,9 +24,19 @@ public:
 	static void DestroyInstance();
 
 	int CreateRoom(std::string owner);
-	void CloseRoom();
+	void CloseRoom(int roomNumber);
 
-	const Room& GetRoomInstance(int number) { return mRoomMap[number]; }
+	int GetRoomCount() const { return mNext; }
+	std::vector<int> GetRoomNumbers() const;
+	std::string GetOwnerId(int roomNumber) { return mRoomMap[roomNumber].owner; }
+	std::string GetOpponentId(int roomNumber, std::string id);
+	bool GetRoomStatus(int roomNumber) { return mRoomMap[roomNumber].mStatus; }
+
+	void SetParticipantId(int roomNumber, std::string id) { mRoomMap[roomNumber].participant = id; }
+	void DelegateOwnership(int roomNumber);
+
+	//const Room& GetRoomInstance(int number) { return mRoomMap[number]; }
+	//const std::unordered_map<int, Room>& GetRoomMap() { return mRoomMap; }
 
 private:
 	RoomManager() : mNext(0) {};

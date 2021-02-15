@@ -37,6 +37,15 @@ enum {
 	DETAIL
 };
 
+/* room info request header */
+enum {
+	LIST,
+	CREATE,
+	CLOSE,
+	ENTER,
+	LEAVE
+};
+
 /* response header */
 enum {
 	CHAT_RES,
